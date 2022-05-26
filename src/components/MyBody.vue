@@ -1,4 +1,4 @@
-
+<!--  make sure to put pictures and images on the assets folder in src -->
 <template>
   <div class="containter">
     <div class="row">

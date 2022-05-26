@@ -1,6 +1,6 @@
 <template>
   <footer class="d-flex align-items-center justify-content-center mt-5">
-    Copyright &copy; {{ new Date().getFullYear()}}
+    Copyright &copy; {{ new Date().getFullYear() }}
   </footer>
 </template>
 
@@ -13,3 +13,4 @@ footer {
   font-size: 0.8em;
 }
 </style>
+<!-- scoped means it is only for this component if you leave that off it can spill over-->

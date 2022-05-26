@@ -7,8 +7,9 @@ import (
 	"net/http"
 )
 
+//TODO this is a helper page to read and write json from this page alone that you can then reference too to keep code dry
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
-		maxBytes := 1048576 // one megabyte 
+		maxBytes := 1048576 // one megabyte limiting the max fiile size size that you will accept as a post
 		r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
 
@@ -18,8 +19,8 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data in
 			return err
 		}
 
-		err = dec.Decode(&struct{}{})
-		if err != io.EOF {
+		err = dec.Decode(&struct{}{}) //want to make sure the body has a sinlge json value and not muliple
+		if err != io.EOF { //end of File 
 			return errors.New("body must have only a single json value")
 		}
 
@@ -28,18 +29,18 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data in
 
 
 func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
-	out, err := json.MarshalIndent(data, "", "\t")
+	out, err := json.MarshalIndent(data, "", "\t")// converting go code into json
 	if err != nil {
 		return err
 	}
 
-	if len(headers) > 0 {
+	if len(headers) > 0 { //to make sure there is only 1 json value 
 		for key, value := range headers[0] {
-			w.Header()[key] = value
+			w.Header()[key] = value 
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json") //setting the content type into json 
 	w.WriteHeader(status)
 	_, err = w.Write(out)
 	if err != nil {
@@ -50,7 +51,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data interf
 }
 
 
-func (app *application) errorJSON(w http.ResponseWriter, err error, status ...int) {
+func (app *application) errorJSON(w http.ResponseWriter, err error, status ...int) { //this will write an error back to the client 
 	statusCode := http.StatusBadRequest
 
 	if len(status) > 0 {
@@ -61,5 +62,5 @@ func (app *application) errorJSON(w http.ResponseWriter, err error, status ...in
 	payload.Error = true
 	payload.Message = err.Error()
 
-	app.writeJSON(w, statusCode, payload)
+	app.writeJSON(w, statusCode, payload) //wriiting to json the status and payload data if error is found 
 }
