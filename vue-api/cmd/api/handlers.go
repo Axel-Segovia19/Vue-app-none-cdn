@@ -4,11 +4,15 @@ import (
 	"net/http"
 )
 
-// 
+//
 type jsonResponse struct {
-	Error bool `json:"error"`
-	Message string `json:"message"`
+	Error   bool        `json:"error"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
+
+type envelope map[string]interface{}
+
 // Login is the handler used to attempt to log a user into the api
 //this handler will be hit when we call it from out front end
 func (app *application) Login(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +21,7 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	var creds credentials // var of creds of type credentials  holding email and password
+	var creds credentials    // var of creds of type credentials  holding email and password
 	var payload jsonResponse // payload is of type jsonResponse that holds and error bool and a message string
 
 	err := app.readJSON(w, r, &creds) // reading json from the readjson helper in helpers.go
@@ -28,8 +32,6 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 		_ = app.writeJSON(w, http.StatusBadRequest, payload) // writing json to http server if error found
 	}
 
-
-
 	//  TODO authenticate
 	app.infoLog.Println(creds.UserName, creds.Password)
 
@@ -38,7 +40,7 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 	payload.Message = "Signed in"
 
 	err = app.writeJSON(w, http.StatusOK, payload) // writing to json if error is not found from write json helper
-	if err != nil{
+	if err != nil {
 		app.errorLog.Println(err)
 	}
 }
