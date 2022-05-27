@@ -3,7 +3,7 @@
     <div class="row">
       <div class="col">
         <h1 class="mt-5">Login</h1>
-        <hr />
+        <hr >
         <!-- @myevent is an event you will fire off from somewhere else in your code this component will listen for and then perform some action
         can also be written v-on:myevent="" will need a method call submit handler look in script -->
         <form-tag @myevent="submitHandler" name="myForm" event="myevent"> <!-- the event you emit from FormTag is being named here and also binds the event to myevent -->

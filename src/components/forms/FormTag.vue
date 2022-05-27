@@ -7,7 +7,8 @@
     autocomplete="off"
     :method="method"
     :action="action"
-    class="needs-validation"
+    class="needs-validation 
+    form-control"
     novalidate
   >
     <slot></slot>
