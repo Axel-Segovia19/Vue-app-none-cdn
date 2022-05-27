@@ -38,6 +38,11 @@
 <script>//inside the script tag is where you will enter your javascript
 import FormTag from "./forms/FormTag.vue"; // importing the formtag component to be used here in the login screen 
 import TextInput from "./forms/TextInput.vue"; //importing the TextInput component to give it some function with Javascript 
+import { store } from "./store.js"
+import router from './../router/index.js'
+import notie from 'notie'
+import Security from './security.js'
+
 export default {
   name: "MyLogin",
   components: { // this registers your components to be used in you html vuejs code
@@ -49,29 +54,50 @@ export default {
     return {
       email: "",
       password: "",
+      store,
     };
   },
   methods: {// this gives function to the @myevent handle up top for logging in
     submitHandler() {
-      console.log("submitHandler called - success!");
-
       const payload = { // this what the back end is expenting to find 
         email: this.email,
         password: this.password,
       };
 
-      const requestOptions = { // 
-        method: "POST",
-        body: JSON.stringify(payload), // payload is converted to json 
-      };
-
-      fetch("http://localhost:8081/users/login", requestOptions) // that makes the call to the back end and sends the payload json
+      fetch(process.env.VUE_APP_API_URL + "/users/login", Security.requestOptions(payload)) // that makes the call to the back end and sends the payload json
         .then((response) => response.json()) // after you make the call yuo get your response and convert it to response json
-        .then((data) => { // catching the error if data was not received
-          if (data.error) {
-            console.log("Error:", data.message);
+        .then((response) => { // catching the error if data was not received
+          if (response.error) {
+            notie.alert({
+              type: 'error',
+              text: response.message,
+              //stay: true, //these are different options you have to give alerts using notie
+              // position: 'bottom',
+            })
           } else {
-            console.log(data);
+            store.token = response.data.token.token;
+
+            //save info to cookie
+            let date = new Date();
+            let expDays = 1;
+            date.setTime(date.getTime() + (expDays *24 *60 *60 *1000));
+            const expires = "expires=" + date.toUTCString();
+
+            store.user = {
+              id: response.data.user.id,
+              first_name: response.data.user.first_name,
+              last_name: response.data.user.last_name,
+              email: response.data.user.email,
+            }
+
+            //set the cookie
+            document.cookie = "_site_data="
+            + JSON.stringify(response.data)
+            + "; "
+            + expires
+            + "; path=/; SameSite=strict; Secure;"
+
+            router.push("/"); //this is redirecting you to the home page by importing router when you are successfully logged in 
           }
         });
     },

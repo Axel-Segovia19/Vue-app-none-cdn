@@ -28,25 +28,17 @@ func (app *application) routes() http.Handler {
 		MaxAge:           300,
 	}))
 
-	mux.Get("/users/login", app.Login) // this is linked to app.Login in the handlers
+// this is linked to app.Login in the handlers
 	mux.Post("/users/login", app.Login)
+	// this is linked to the Logout handler
+	mux.Post("/users/logout", app.Logout)
 
-	mux.Get("/users/all", func(w http.ResponseWriter, r *http.Request) {
-		var users data.User
-		all, err := users.GetAll()
-		if err != nil {
-			app.errorLog.Println(err)
-			return
-		}
+	mux.Route("/admin", func(mux chi.Router) { // in order for anyone to use routes inside this block they much have and authenticated token!
+		mux.Use(app.AuthTokenMiddleware) // this is using AuthTokenMiddleware func to protect routes 
 
-		payload := jsonResponse{
-			Error: false,
-			Message: "success",
-			Data: envelope{"users": all},
-		}
-
-		app.writeJSON(w, http.StatusOK, payload)
+		mux.Post("/users", app.AllUsers) //this is calling the AllUsers handler to get all users in this protected route
 	})
+
 
 	mux.Get("/users/add", func(w http.ResponseWriter, r *http.Request) {
 		var u = data.User{

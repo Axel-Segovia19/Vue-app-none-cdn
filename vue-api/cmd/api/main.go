@@ -21,6 +21,7 @@ type application struct { //this will help to share bits of information with par
 	infoLog *log.Logger //print info message to the console
 	errorLog *log.Logger // print error messages to the console
 	models data.Models
+	enviornment string
 }
 
 // main is the main entry point for our application
@@ -32,6 +33,7 @@ func main() {
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // log.Lshortfile will tell you where err took place 
 
 	dsn := os.Getenv("DSN")
+	enviornment := os.Getenv("ENV")
 	db, err := driver.ConnectPostgres(dsn)
 	if err != nil {
 		log.Fatal("Cannot connect to database")
@@ -43,6 +45,7 @@ func main() {
 		infoLog: infoLog,
 		errorLog: errorLog,
 		models: data.New(db.SQL),
+		enviornment: enviornment,
 	}
 
 
