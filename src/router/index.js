@@ -8,6 +8,7 @@ import BooksAdmin from './../components/BooksAdmin.vue'
 import BookEdit from './../components/BookEdit.vue'
 import MyUsers from'./../components/MyUsers.vue'
 import User from'./../components/UserEdit.vue'
+import Security from "@/components/security";
 
 // declaring your routes  path, name, and component it links too.
 const routes = [
@@ -23,12 +24,12 @@ const routes = [
   },
   {
     path: "/books",
-    name: 'Books',
+    name: 'MyBooks',
     component: MyBooks,
   },
   {
     path: "/books/:bookName", // :bookName  purpose of colon is to change depending on book we are looking at
-    name: 'Book',
+    name: 'MyBook',
     component: MyBook,
   },
   {
@@ -43,15 +44,18 @@ const routes = [
   },
   {
     path: "/admin/users",
-    name: 'Users',
+    name: 'MyUsers',
     component: MyUsers,
   },
   {
     path: "/admin/users/:userId",
-    name: "User",
+    name: "MyUser",
     component: User,
   },
 ]
 //  this is where you create the router to be able to call the routes you declared by then exporting it to be used in App.vue 
 const router = createRouter({ history: createWebHistory(), routes })
+router.beforeEach(() => { // do something before every route is beforeEach
+  Security.checkToken(); 
+})
 export default router 

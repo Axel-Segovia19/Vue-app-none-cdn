@@ -11,6 +11,7 @@
             <tr>
               <th>User</th>
               <th>Email</th>
+              <th>Active</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -22,10 +23,20 @@
                 >
               </td>
               <td>{{ u.email }}</td>
+
+              <td v-if="u.active === 1">
+                <span class="badge bg-success">Active</span>
+              </td>
+              <td v-else>
+                <span class="badge bg-danger">Inactive</span>
+              </td>
+
               <td v-if="u.token.id > 0">
-                <span class="badge bg-success" @click="logUserOut(u.id)"
+                <a href="javascript:void(0);">
+                  <span class="badge bg-success" @click="logUserOut(u.id)"
                   >Logged in
-                </span>
+                  </span>
+                </a>
               </td>
               <td v-else>
                 <span class="badge bg-danger">Not logged in</span>
@@ -33,8 +44,6 @@
             </tr>
           </tbody>
         </table>
-
-        <p v-else>Loading...</p>
       </div>
     </div>
   </div>
@@ -47,6 +56,7 @@ import notie from "notie";
 import { store } from "./store.js";
 
 export default {
+  name: 'MyUsers',
   data() {
     // we store the data we get to get a list of all users in the local state
     return {
@@ -66,24 +76,34 @@ export default {
       .then((response) => {
         if (response.error) {
           // this had notie replaced it with emit and changed data to response
-          this.emit("error", response.message);
+          this.$emit("error", response.message);
         } else {
           this.users = response.data.users;
           this.ready = true;
         }
       })
       .catch((error) => {
-        this.emit("error", error);
+        this.$emit("error", error);
       });
   },
   methods: {
     logUserOut(id) {
       if (id !== store.user.id) {
         notie.confirm({
-          text: "Are you sure you want to log this user out>",
+          text: "Are you sure you want to log this user out?",
           submitText: "Log Out",
-          submitCallback: function () {
+          submitCallback: () => {
             console.log("Would log out user id", id);
+            fetch(process.env.VUE_APP_API_URL + "/admin/log-user-out/" + id, Security.requestOptions(""))
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                this.$emit('error', data.message);
+              } else {
+                 this.$emit('success', data.message);
+                 this.$emit('forceUpdate');
+              }
+            })
           },
         });
       } else {

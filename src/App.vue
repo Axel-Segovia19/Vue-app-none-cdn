@@ -2,7 +2,18 @@
   <MyHeader />
   <div>
     <!-- defining where you want your routed components to show up between div tags by calling router-view -->
-    <router-view @success="success" @error="error" @warning="warning"/>
+    <router-view
+      v-slot="{Component}"
+      :key="componentKey"
+      @success="success"
+      @error="error"
+      @warning="warning"
+      @forceUpdate="forceUpdate">
+    
+      <keep-alive include="MyBooks">
+        <component :is="Component" />
+      </keep-alive>
+    </router-view>
     <!-- we are passing @success etc so when an error pops up fpr any child component notie will notify us this is better to keep code dry instead of using notie every chance we get-->
   </div>
   <MyFooter />
@@ -15,8 +26,7 @@
 import MyHeader from "./components/MyHeader.vue";
 import MyFooter from "./components/MyFooter.vue";
 import { store } from "./components/store.js";
-import notie from 'notie'
-
+import notie from "notie";
 
 const getCookie = (name) => {
   // this will read the cookies find a cookie by that name and return a value
@@ -34,6 +44,7 @@ export default {
   data() {
     return {
       store,
+      componentKey: 0,
     };
   },
   beforeMount() {
@@ -53,25 +64,28 @@ export default {
       };
     }
   },
-    methods: {
-      success(msg) {
-        notie.alert({
-          type: 'success',
-          text: msg,
-        })
-      },
-      error(msg) {
-        notie.alert({
-          type: 'error',
-          text: msg,
-        })
-      },
-      warning(msg) {
-        notie.alert({
-          type: 'warning',
-          text: msg,
-      })
-    }
+  methods: {
+    success(msg) {
+      notie.alert({
+        type: "success",
+        text: msg,
+      });
+    },
+    error(msg) {
+      notie.alert({
+        type: "error",
+        text: msg,
+      });
+    },
+    warning(msg) {
+      notie.alert({
+        type: "warning",
+        text: msg,
+      });
+    },
+    forceUpdate() {
+      this.componentKey += 1;
+    },
   },
 };
 </script>

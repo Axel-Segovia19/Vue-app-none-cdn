@@ -26,12 +26,16 @@ func New(dbPool *sql.DB) Models {
 	return Models{
 		User:  User{},
 		Token: Token{},
+		Book: Book{},
+		Author: Author{},
 	}
 }
 
 type Models struct {
-	User  User
-	Token Token
+	User   User
+	Token  Token
+	Book   Book
+	Author Author
 }
 
 type User struct {
@@ -53,8 +57,8 @@ func (u *User) GetAll() ([]*User, error) {
 
 	query := `select id, email, first_name, last_name, password, user_active, created_at, updated_at,
 	case
-	when (select count(id) from tokens t where user_id = users.id and t.expiry > NOW()) > 0 then 1
-	else 0
+		when (select count(id) from tokens t where user_id = users.id and t.expiry > NOW()) > 0 then 1
+		else 0
 	end as has_token
 	from users order by last_name`
 
@@ -155,7 +159,7 @@ func (u *User) Update() error {
 			email = $1,
 			first_name = $2,
 			last_name = $3,
-			user_active = $4
+			user_active = $4,
 			updated_at = $5
 			where id = $6
 	`
@@ -277,7 +281,7 @@ func (u *User) PasswordMatches(plainText string) (bool, error) {
 	return true, nil
 }
 
-//Token is the data structure for any token in the database. Note that 
+//Token is the data structure for any token in the database. Note that
 //  we do not send the TokenHash (a slice of bytes) in any exported JSON.
 type Token struct {
 	ID        int       `json:"id"`
@@ -290,7 +294,7 @@ type Token struct {
 	Expiry    time.Time `json:"expiry"`
 }
 
-//GetByToken takes a plain text token string, and looks up the full token from 
+//GetByToken takes a plain text token string, and looks up the full token from
 // the database, it returns a pointer to the token model
 func (t *Token) GetByToken(plainText string) (*Token, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
@@ -347,7 +351,6 @@ func (t *Token) GetUserForToken(token Token) (*User, error) {
 	return &user, nil
 }
 
-
 //GenerateToken generates a secure token of exactly 26 characters in length and returns it
 func (t *Token) GenerateToken(userID int, ttl time.Duration) (*Token, error) {
 	token := &Token{
@@ -368,7 +371,7 @@ func (t *Token) GenerateToken(userID int, ttl time.Duration) (*Token, error) {
 	return token, nil
 }
 
-// AuthenticateToken takes the full http request, extracts the authorization header, 
+// AuthenticateToken takes the full http request, extracts the authorization header,
 // tales the plain text token from that header and looks up the associated token entry
 // in the database, and then finds the user associated with that token. if the token
 // is valid and a user is found, the user is returned; otherwise, it returns an error
@@ -388,13 +391,13 @@ func (t *Token) AuthenticateToken(r *http.Request) (*User, error) {
 	if len(token) != 26 {
 		return nil, errors.New("token wrong size")
 	}
-	
+
 	// get the token from the database, using the plain text token to find it
 	tkn, err := t.GetByToken(token)
 	if err != nil {
 		return nil, errors.New("no matching token found")
 	}
-	
+
 	// makes sure the token has not expired
 	if tkn.Expiry.Before(time.Now()) {
 		return nil, errors.New("expired token")
@@ -424,6 +427,9 @@ func (t *Token) Insert(token Token, u User) error {
 	if err != nil {
 		return err
 	}
+
+	// we assign the email value, just to be safe, in case it was
+	// not done in the handler that calls the function
 	token.Email = u.Email
 
 	stmt = `insert into tokens (user_id, email, token, token_hash, created_at, updated_at, expiry)
@@ -446,6 +452,7 @@ func (t *Token) Insert(token Token, u User) error {
 
 }
 
+// DeleteByToken deletes a token, by the plain text token
 func (t *Token) DeleteByToken(plainText string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -459,6 +466,22 @@ func (t *Token) DeleteByToken(plainText string) error {
 
 	return nil
 }
+
+func (t *Token) DeleteTokensForUser(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	stmt := "delete from tokens where user_id = $1"
+	_, err := db.ExecContext(ctx, stmt, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Validtoken makes certain that a given token is valid; in order to be valid,
+// the token must exist in the database, the associated user must exist in the database,
+// and the token must not have expired
 
 func (t *Token) ValidToken(plainText string) (bool, error) {
 	token, err := t.GetByToken(plainText)
